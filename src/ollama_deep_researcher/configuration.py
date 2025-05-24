@@ -8,6 +8,16 @@ from langchain_core.runnables import RunnableConfig
 class SearchAPI(Enum):
     DUCKDUCKGO = "duckduckgo"
 
+class ResearchStrategy(Enum):
+    BROAD_OVERVIEW = "broad"
+    DEEP_DIVE = "deep"
+    COMPARATIVE = "comparative"
+
+class OutputFormat(Enum):
+    MARKDOWN = "markdown"
+    JSON = "json"
+    HTML = "html"
+
 class Configuration(BaseModel):
     """The configurable fields for the research assistant."""
 
@@ -41,11 +51,30 @@ class Configuration(BaseModel):
         title="Ollama Base URL",
         description="Base URL for Ollama API"
     )
-
     strip_thinking_tokens: bool = Field(
         default=True,
         title="Strip Thinking Tokens",
         description="Whether to strip <think> tokens from model responses"
+    )
+    research_strategy: Literal["broad", "deep", "comparative"] = Field(
+        default="broad",
+        title="Research Strategy",
+        description="Strategy for conducting research: broad overview, deep dive, or comparative analysis"
+    )
+    output_format: Literal["markdown", "json", "html"] = Field(
+        default="markdown",
+        title="Output Format",
+        description="Format for the final research output"
+    )
+    max_sources_per_loop: int = Field(
+        default=3,
+        title="Sources Per Loop",
+        description="Maximum number of sources to gather per research loop"
+    )
+    enable_source_verification: bool = Field(
+        default=False,
+        title="Source Verification",
+        description="Enable basic source credibility checking"
     )
 
     @classmethod

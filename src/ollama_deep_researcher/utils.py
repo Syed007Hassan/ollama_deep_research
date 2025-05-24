@@ -1,7 +1,9 @@
 import os
 import httpx
 import requests
+import asyncio
 from typing import Dict, Any, List, Union, Optional
+from datetime import datetime
 
 from markdownify import markdownify
 from langsmith import traceable
@@ -127,9 +129,9 @@ def format_sources(search_results: Dict[str, Any]) -> str:
         for source in search_results['results']
     )
 
-def fetch_raw_content(url: str) -> Optional[str]:
+async def fetch_raw_content(url: str) -> Optional[str]:
     """
-    Fetch HTML content from a URL and convert it to markdown format.
+    Asynchronously fetch HTML content from a URL and convert it to markdown format.
     
     Uses a 10-second timeout to avoid hanging on slow sites or large pages.
     
@@ -141,9 +143,8 @@ def fetch_raw_content(url: str) -> Optional[str]:
                       None if any error occurs during fetching or conversion
     """
     try:                
-        # Create a client with reasonable timeout
-        with httpx.Client(timeout=10.0) as client:
-            response = client.get(url)
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url)
             response.raise_for_status()
             return markdownify(response.text)
     except Exception as e:
@@ -151,7 +152,7 @@ def fetch_raw_content(url: str) -> Optional[str]:
         return None
 
 @traceable
-def duckduckgo_search(query: str, max_results: int = 3, fetch_full_page: bool = False) -> Dict[str, List[Dict[str, Any]]]:
+async def duckduckgo_search(query: str, max_results: int = 3, fetch_full_page: bool = False) -> Dict[str, List[Dict[str, Any]]]:
     """
     Search the web using DuckDuckGo and return formatted results.
     
@@ -171,36 +172,159 @@ def duckduckgo_search(query: str, max_results: int = 3, fetch_full_page: bool = 
                 - raw_content (str or None): Full page content if fetch_full_page is True,
                                             otherwise same as content
     """
+    
+    def _sync_ddg_search(query: str, max_results: int) -> List[Dict[str, Any]]:
+        """Synchronous DuckDuckGo search to be run in a separate thread."""
+        try:
+            with DDGS() as ddgs:
+                return list(ddgs.text(query, max_results=max_results))
+        except Exception as e:
+            print(f"Error in sync DuckDuckGo search: {str(e)}")
+            return []
+    
     try:
-        with DDGS() as ddgs:
-            results = []
-            search_results = list(ddgs.text(query, max_results=max_results))
+        # Run the synchronous DDGS search in a separate thread to avoid blocking
+        search_results = await asyncio.to_thread(_sync_ddg_search, query, max_results)
+        
+        results = []
+        # Prepare tasks for parallel content fetching
+        content_tasks = []
+        
+        for r in search_results:
+            url = r.get('href')
+            title = r.get('title')
+            content = r.get('body')
             
-            for r in search_results:
-                url = r.get('href')
-                title = r.get('title')
-                content = r.get('body')
-                
-                if not all([url, title, content]):
-                    print(f"Warning: Incomplete result from DuckDuckGo: {r}")
-                    continue
+            if not all([url, title, content]):
+                print(f"Warning: Incomplete result from DuckDuckGo: {r}")
+                continue
 
-                raw_content = content
-                if fetch_full_page:
-                    raw_content = fetch_raw_content(url)
-                
-                # Add result to list
-                result = {
-                    "title": title,
-                    "url": url,
-                    "content": content,
-                    "raw_content": raw_content
-                }
-                results.append(result)
+            if fetch_full_page:
+                content_tasks.append(fetch_raw_content(url))
+            else:
+                content_tasks.append(asyncio.create_task(asyncio.sleep(0, result=content)))
+        
+        # Fetch all content in parallel
+        if content_tasks:
+            raw_contents = await asyncio.gather(*content_tasks, return_exceptions=True)
+        else:
+            raw_contents = []
+        
+        # Combine results
+        for i, r in enumerate(search_results):
+            url = r.get('href')
+            title = r.get('title')
+            content = r.get('body')
             
-            return {"results": results}
+            if not all([url, title, content]):
+                continue
+            
+            raw_content = content
+            if i < len(raw_contents) and not isinstance(raw_contents[i], Exception):
+                raw_content = raw_contents[i] if raw_contents[i] is not None else content
+            
+            result = {
+                "title": title,
+                "url": url,
+                "content": content,
+                "raw_content": raw_content
+            }
+            results.append(result)
+        
+        return {"results": results}
     except Exception as e:
         print(f"Error in DuckDuckGo search: {str(e)}")
         print(f"Full error details: {type(e).__name__}")
         return {"results": []}
+
+# Synchronous wrapper for backward compatibility
+def duckduckgo_search_sync(query: str, max_results: int = 3, fetch_full_page: bool = False) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Synchronous wrapper for duckduckgo_search for backward compatibility.
+    """
+    return asyncio.run(duckduckgo_search(query, max_results, fetch_full_page))
+
+def log_progress(step: str, details: str = ""):
+    """
+    Log research progress with timestamp for better user experience.
+    
+    Args:
+        step (str): The current research step
+        details (str): Additional details about the step
+    """
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    print(f"[{timestamp}] 🔍 {step}")
+    if details:
+        print(f"    └─ {details}")
+
+def assess_source_credibility(url: str, title: str, content: str) -> float:
+    """
+    Basic source credibility assessment.
+    
+    Args:
+        url (str): Source URL
+        title (str): Source title
+        content (str): Source content
+        
+    Returns:
+        float: Credibility score between 0.0 and 1.0
+    """
+    score = 0.5  # Base score
+    
+    # Domain-based scoring
+    trusted_domains = ['wikipedia.org', 'edu', 'gov', 'nature.com', 'sciencedirect.com']
+    if any(domain in url.lower() for domain in trusted_domains):
+        score += 0.3
+    
+    # Content quality indicators
+    if len(content) > 500:  # Substantial content
+        score += 0.1
+    if any(word in content.lower() for word in ['research', 'study', 'analysis']):
+        score += 0.1
+    
+    return min(score, 1.0)
+
+async def parallel_search(query: str, max_results: int = 3, fetch_full_page: bool = False) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Perform parallel web searches using multiple search engines for faster results.
+    
+    Args:
+        query (str): The search query to execute
+        max_results (int, optional): Maximum number of results per search engine. Defaults to 3.
+        fetch_full_page (bool, optional): Whether to fetch full page content. Defaults to False.
+    
+    Returns:
+        Dict[str, List[Dict[str, Any]]]: Combined search results from all engines
+    """
+    log_progress("Starting parallel search", f"Query: {query}")
+    
+    # Create tasks for parallel execution
+    tasks = []
+    
+    # Add DuckDuckGo search
+    tasks.append(duckduckgo_search(query, max_results, fetch_full_page))
+    
+    # You can add more search engines here in the future
+    # tasks.append(bing_search_async(query, max_results, fetch_full_page))
+    # tasks.append(google_scholar_search_async(query, max_results, fetch_full_page))
+    
+    try:
+        # Execute all searches concurrently
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Combine results from all successful searches
+        combined_results = []
+        for result in results:
+            if isinstance(result, dict) and 'results' in result:
+                combined_results.extend(result['results'])
+            elif isinstance(result, Exception):
+                print(f"Search error: {str(result)}")
+        
+        log_progress("Parallel search completed", f"Found {len(combined_results)} total results")
+        return {"results": combined_results}
+        
+    except Exception as e:
+        print(f"Error in parallel search: {str(e)}")
+        # Fallback to single search
+        return await duckduckgo_search(query, max_results, fetch_full_page)
 
