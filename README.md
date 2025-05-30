@@ -112,4 +112,8 @@ Open `LangGraph Studio Web UI` via the URL above. In the `configuration` tab, yo
 
 ## How it works
 
+https://github.com/user-attachments/assets/ff494b16-74ce-4a09-85ec-f9428a94090a
+
+
+
 
