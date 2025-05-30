@@ -57,7 +57,7 @@ You can configure the research assistant using environment variables in the `.en
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LOCAL_LLM` | `qwen3:14b` | Name of the LLM model to use with Ollama |
+| `LOCAL_LLM` | `deepseek-r1:14b` | Name of the LLM model to use with Ollama |
 | `LLM_PROVIDER` | `ollama` | LLM provider (currently only Ollama supported) |
 | `OLLAMA_BASE_URL` | `http://localhost:11434/` | Base URL for Ollama API |
 
