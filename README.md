@@ -1,5 +1,8 @@
 # Ollama Deep Research
 
+![image](https://github.com/user-attachments/assets/49d0e7cb-e547-4e85-bee1-481f2c18db9b)
+
+
 Ollama Deep Research is a fully local web research assistant powered by any LLM hosted on [Ollama](https://ollama.com/search). 
 
 Simply provide a research topic, and the assistant will intelligently generate web search queries, gather relevant results, and create comprehensive summaries. It then analyzes these summaries to identify knowledge gaps, generates follow-up queries to fill those gaps, and repeats this iterative process for a configurable number of research cycles.
@@ -105,11 +108,8 @@ Open `LangGraph Studio Web UI` via the URL above. In the `configuration` tab, yo
 3. Default values in the Configuration class (lowest priority)
 ```
 
-TODO
-Images to be added here
- 
-## How it works
- todo
-## Outputs
+![image](https://github.com/user-attachments/assets/00a02b65-1067-43e1-ae67-a1d7ceda7509)
 
-todo
+## How it works
+
+
