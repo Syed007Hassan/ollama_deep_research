@@ -3,7 +3,7 @@ name = "ollama-deep-researcher"
 version = "0.0.1"
 description = "Fully local web research and summarization assistant with Ollama and LangGraph."
 authors = [
-    { name = "Lance Martin" }
+    { name = "Hassan Ali" }
 ]
 readme = "README.md"
 license = { text = "MIT" }
