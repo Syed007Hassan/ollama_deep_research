@@ -9,6 +9,21 @@ Simply provide a research topic, and the assistant will intelligently generate w
 
 The final output is a well-structured markdown report with cited sources from all research conducted.
 
+## ✨ Features
+
+- 🏠 **Fully Local**: No external API keys required - runs entirely on your machine with Ollama
+- 🔄 **Iterative Research**: Automatically identifies knowledge gaps and conducts follow-up research loops
+- 🔍 **Smart Query Generation**: LLM-powered search query optimization for better results
+- 📊 **Source Verification**: Optional credibility scoring and assessment for research sources
+- ⚙️ **Highly Configurable**: Adjust research depth, models, strategies, and output formats
+- 📝 **Multiple Output Formats**: Support for Markdown, JSON, and HTML output
+- 🎯 **Research Strategies**: Choose from broad overview, deep dive, or comparative analysis modes
+- 🔗 **Proper Citations**: All findings include proper source citations with URLs
+- ⚡ **Parallel Processing**: Asynchronous web searches for improved performance
+- 🌐 **Extensible Search**: DuckDuckGo by default, with architecture for additional search APIs
+- 🧠 **Context-Aware**: Maintains research context across multiple iterations
+- 📈 **Progress Tracking**: Real-time logging of research steps and progress
+
 ## 🚀 Quickstart (after creating a environemnt)
 
 Clone the repository then do a cd:
@@ -27,20 +42,78 @@ cp .env.example .env
 
 2. Pull a local LLM from [Ollama](https://ollama.com/search). As an [example](https://ollama.com/library/deepseek-r1:8b):
 ```shell
-ollama pull qwen3:14b
+ollama pull deepseek-r1:14b
 ```
 
 ### Selecting search tool
 
 By default, it will use [DuckDuckGo](https://duckduckgo.com/) for web search, cause it  does not require an API key. 
 
-Optionally, update the `.env` file with the following search tool configuration and API keys. 
+## ⚙️ Configuration Options
 
-If set, these values will take precedence over the defaults set in the `Configuration` class in `configuration.py`. 
+You can configure the research assistant using environment variables in the `.env` file or through the LangGraph Studio UI. Below are all available configuration options:
+
+### Core Settings
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LOCAL_LLM` | `qwen3:14b` | Name of the LLM model to use with Ollama |
+| `LLM_PROVIDER` | `ollama` | LLM provider (currently only Ollama supported) |
+| `OLLAMA_BASE_URL` | `http://localhost:11434/` | Base URL for Ollama API |
+
+### Research Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MAX_WEB_RESEARCH_LOOPS` | `3` | Number of research iterations to perform |
+| `RESEARCH_STRATEGY` | `broad` | Research approach: `broad`, `deep`, or `comparative` |
+| `MAX_SOURCES_PER_LOOP` | `3` | Maximum number of sources to gather per research loop |
+| `ENABLE_SOURCE_VERIFICATION` | `false` | Enable basic source credibility checking |
+
+### Search Settings
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SEARCH_API` | `duckduckgo` | Web search API to use (currently only DuckDuckGo) |
+| `FETCH_FULL_PAGE` | `true` | Include full page content in search results |
+
+### Output Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OUTPUT_FORMAT` | `markdown` | Format for final output: `markdown`, `json`, or `html` |
+| `STRIP_THINKING_TOKENS` | `true` | Remove `<think>` tokens from model responses |
+
+### Example .env Configuration
+
 ```shell
-SEARCH_API=xxx # the search API to use, such as `duckduckgo` (default)
-MAX_WEB_RESEARCH_LOOPS=xxx # the maximum number of research loop steps, defaults to `3`
-FETCH_FULL_PAGE=xxx # fetch the full page content (with `duckduckgo`), defaults to `false`
+# Core LLM Settings
+LOCAL_LLM=qwen3:14b
+OLLAMA_BASE_URL=http://localhost:11434/
+
+# Research Configuration  
+MAX_WEB_RESEARCH_LOOPS=5
+RESEARCH_STRATEGY=deep
+MAX_SOURCES_PER_LOOP=5
+ENABLE_SOURCE_VERIFICATION=true
+
+# Search Settings
+SEARCH_API=duckduckgo
+FETCH_FULL_PAGE=true
+
+# Output Settings
+OUTPUT_FORMAT=markdown
+STRIP_THINKING_TOKENS=true
+```
+
+### Configuration Priority
+
+Keep in mind that configuration values are loaded in the following priority order:
+
+```
+1. Environment variables (highest priority)
+2. LangGraph Studio UI configuration
+3. Default values in the Configuration class (lowest priority)
 ```
 
 ### Running with LangGraph Studio
