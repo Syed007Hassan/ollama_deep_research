@@ -24,17 +24,29 @@ The final output is a well-structured markdown report with cited sources from al
 - 🧠 **Context-Aware**: Maintains research context across multiple iterations
 - 📈 **Progress Tracking**: Real-time logging of research steps and progress
 
-## 🚀 Quickstart (after creating a environemnt)
+## 🚀 Quickstart
 
-Clone the repository then do a cd:
-```shell
-cd ollama-deep-research
+### Prerequisites
+
+1. **Install Poetry** (for dependency management):
+```bash
+pip install poetry
+
 ```
 
-Then edit the `.env` file to customize the environment variables according to your needs. These environment variables control the model selection, search tools, and other configuration settings. When you run the application, these values will be automatically loaded via `python-dotenv` (because `langgraph.json` point to the "env" file).
+2. **Clone and setup the project**:
 ```shell
+git clone https://github.com/Syed007Hassan/ollama_deep_research.git
+cd ollama_deep_research
+
+# Install dependencies with Poetry
+poetry install
+
+# Copy environment configuration
 cp .env.example .env
 ```
+
+**Note:** Poetry automatically creates and manages virtual environments, so you don't need to manually create one with `python -m venv`.
 
 ### Selecting local model with Ollama
 
@@ -120,46 +132,35 @@ Keep in mind that configuration values are loaded in the following priority orde
 
 #### Mac
 
-1. (Recommended) Create a virtual environment:
+1. Start Ollama service:
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+ollama serve
 ```
 
-2. Launch LangGraph server:
-
+2. Launch LangGraph server with Poetry:
 ```bash
-# Install uv package manager
+# Method 1: Using uv with Poetry
 curl -LsSf https://astral.sh/uv/install.sh | sh
 uvx --refresh --from "langgraph-cli[inmem]" --with-editable . --python 3.11 langgraph dev
+
+# Method 2: Direct Poetry command
+poetry run langgraph dev
 ```
 
 #### Windows
 
-1. (Recommended) Create a virtual environment: 
-
-* Install `Python 3.11` (and add to PATH during installation). 
-* Restart your terminal to ensure Python is available, then create and activate a virtual environment:
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-```
-
+1. Start Ollama service:
 ```powershell
 ollama serve
 ```
 
-
-2. Launch LangGraph server:
-
+2. Launch LangGraph server with Poetry:
 ```powershell
-# Install dependencies
-pip install -e .
-pip install -U "langgraph-cli[inmem]"            
+# Install LangGraph CLI in Poetry environment
+poetry add --group dev "langgraph-cli[inmem]"
 
 # Start the LangGraph server
-langgraph dev
+poetry run langgraph dev
 ```
 
 ### Using the LangGraph Studio UI
