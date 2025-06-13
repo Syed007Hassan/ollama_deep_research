@@ -26,12 +26,40 @@ The final output is a well-structured markdown report with cited sources from al
 
 ## 🚀 Quickstart
 
-### Prerequisites
+### Option 1: Docker (Recommended for Easy Setup)
+
+1. **Clone the project**:
+```bash
+git clone https://github.com/Syed007Hassan/ollama_deep_research.git
+cd ollama_deep_research
+```
+
+2. **Copy environment configuration**:
+```bash
+cp .env.example .env
+```
+
+3. **Run with Docker Compose**:
+```bash
+# Start both Ollama and the research assistant
+docker-compose up -d
+
+# Pull the model you want to use (after Ollama is running)
+docker exec ollama-server ollama pull deepseek-r1:14b
+
+# Check logs
+docker-compose logs -f
+```
+
+4. **Access the application**:
+   - LangGraph Studio: http://localhost:2024
+   - Ollama API: http://localhost:11434
+
+### Option 2: Local Installation
 
 1. **Install Poetry** (for dependency management):
 ```bash
 pip install poetry
-
 ```
 
 2. **Clone and setup the project**:

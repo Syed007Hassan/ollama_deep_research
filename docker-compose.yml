@@ -1,0 +1,48 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-server
+    deploy:
+      resources:
+        limits:
+          memory: 12G
+    ports:
+      - "11434:11434"
+    volumes:
+      - ~/.ollama:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  deep-researcher:
+    build: .
+    container_name: deep-researcher-app
+    ports:
+      - "2024:2024"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434/
+      - LOCAL_LLM=deepseek-r1:14b
+      - MAX_WEB_RESEARCH_LOOPS=3
+      - RESEARCH_STRATEGY=broad
+      - SEARCH_API=duckduckgo
+      - OUTPUT_FORMAT=markdown
+      - STRIP_THINKING_TOKENS=true
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ./.env:/app/.env:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2024/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  ollama_data: 
